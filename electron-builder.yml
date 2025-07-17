@@ -23,7 +23,6 @@ nsis:
   createDesktopShortcut: always
   shortcutName: GitHelper
   uninstallDisplayName: GitHelper
-  installDirectory: "${name}" # 安装目录自动加应用文件夹
 mac:
   icon: resources/icon.png
   entitlementsInherit: build/entitlements.mac.plist
