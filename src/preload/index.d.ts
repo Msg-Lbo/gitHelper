@@ -7,6 +7,7 @@ declare global {
       minimize: () => void
       close: () => void
       selectDirectory: () => Promise<string | null>
+      runGitLog: (params: { command: string, projectPath: string }) => Promise<string>
     }
   }
 }

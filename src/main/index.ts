@@ -2,6 +2,8 @@ import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { exec } from 'child_process'
+import os from 'os'
 
 function createWindow(): void {
   // Create the browser window.
@@ -70,7 +72,26 @@ app.whenReady().then(() => {
     if (result.canceled || result.filePaths.length === 0) return null
     return result.filePaths[0]
   })
-
+  ipcMain.handle('run-git-log', async (_, { command, projectPath }) => {
+    const isWin = os.platform() === 'win32'
+    let fullCommand
+    if (isWin) {
+      // Windows 下用 cd /d 和不加 export
+      fullCommand = `cd /d "${projectPath}" && ${command}`
+    } else {
+      // Linux/Mac 下加 export
+      fullCommand = `cd "${projectPath}" && export LANG=zh_CN.GBK && ${command}`
+    }
+    return new Promise((resolve, reject) => {
+      exec(fullCommand, { encoding: 'utf8' }, (error, stdout, stderr) => {
+        if (error) {
+          resolve(stderr || error.message)
+        } else {
+          resolve(stdout)
+        }
+      })
+    })
+  })
   createWindow()
 
   app.on('activate', function () {

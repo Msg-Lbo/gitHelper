@@ -1,16 +1,18 @@
 <template>
   <n-config-provider :theme="darkTheme">
-    <div class="window-root">
-      <TitleBar />
-      <main class="content flex-1">
-        <HomeTabs />
-      </main>
-    </div>
+    <n-message-provider>
+      <div class="window-root">
+        <TitleBar />
+        <main class="content flex-1">
+          <HomeTabs />
+        </main>
+      </div>
+    </n-message-provider>
   </n-config-provider>
 </template>
 
 <script setup lang="ts">
-import { darkTheme, NConfigProvider } from 'naive-ui'
+import { darkTheme, NConfigProvider, NMessageProvider } from 'naive-ui'
 import TitleBar from './components/TitleBar.vue'
 import HomeTabs from './components/HomeTabs.vue'
 </script>

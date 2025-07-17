@@ -4,7 +4,8 @@ import { contextBridge, ipcRenderer } from 'electron'
 const api = {
   minimize: () => ipcRenderer.send('window-minimize'),
   close: () => ipcRenderer.send('window-close'),
-  selectDirectory: () => ipcRenderer.invoke('select-directory')
+  selectDirectory: () => ipcRenderer.invoke('select-directory'),
+  runGitLog: (params: { command: string, projectPath: string }) => ipcRenderer.invoke('run-git-log', params)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
