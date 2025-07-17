@@ -1,20 +1,81 @@
 <template>
   <n-config-provider :theme="darkTheme">
-    <n-message-provider>
+    <n-message-provider placement="top-right" container-style="top: 50px;">
       <div class="window-root">
         <TitleBar />
         <main class="content flex-1">
-          <HomeTabs />
+          <HomeTabs @save="handleCheckDeepSeekBalance" />
         </main>
+        <footer class="footer flex justify-between align-center">
+          <div class="app-version flex align-center gap-5">
+            <div class="status-dot" :style="{ background: balanceInfo?.is_available ? '#4caf50' : '#e9546b' }"></div>
+            <span class="app-version-text">Git Helper v1.0.0</span>
+          </div>
+          <div class="balance-info">
+            <span class="balance-info-text">
+              <span class="balance-info-text-value">￥{{ balanceInfo?.balance_infos[0].total_balance || 0 }}</span>
+            </span>
+          </div>
+        </footer>
       </div>
     </n-message-provider>
   </n-config-provider>
 </template>
 
 <script setup lang="ts">
-import { darkTheme, NConfigProvider, NMessageProvider } from 'naive-ui'
+import { darkTheme, NConfigProvider, NMessageProvider, createDiscreteApi } from 'naive-ui'
 import TitleBar from './components/TitleBar.vue'
 import HomeTabs from './components/HomeTabs.vue'
+import { checkDeepSeekBalance } from './api/deepseek'
+import { onMounted, ref } from 'vue'
+interface BalanceInfo {
+  currency: string
+  total_balance: string
+  granted_balance: string
+  topped_up_balance: string
+}
+
+interface DeepSeekBalance {
+  is_available: boolean
+  balance_infos: BalanceInfo[]
+}
+const balanceInfo = ref<DeepSeekBalance>()
+const { message } = createDiscreteApi([
+  'message'
+])
+// 获取配置
+const getSettings = () => {
+  const raw = localStorage.getItem('githelper-settings')
+  if (raw) {
+    try {
+      return JSON.parse(raw)
+    } catch { }
+  }
+  return {}
+}
+const handleCheckDeepSeekBalance = async () => {
+  try {
+    const settings = getSettings()
+    const deepseekToken = settings.token || ''
+    const res: DeepSeekBalance = await checkDeepSeekBalance(deepseekToken)
+    if (res) {
+      if (res.is_available) {
+        balanceInfo.value = res
+      } else {
+        message.error('当前账户余额不足，请充值')
+      }
+    }
+  } catch (error) {
+    message.error('token 无效，请重新配置')
+    balanceInfo.value = {
+      is_available: false,
+      balance_infos: []
+    }
+  }
+}
+onMounted(() => {
+  handleCheckDeepSeekBalance()
+})
 </script>
 
 <style scoped lang="scss">
@@ -65,5 +126,37 @@ import HomeTabs from './components/HomeTabs.vue'
   padding: 0 10px;
   background: #18181c;
   overflow: auto;
+}
+
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #111111;
+  padding: 5px 10px;
+
+  .app-version {
+    font-size: 13px;
+    color: #aaa;
+    z-index: 10;
+    cursor: pointer;
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #aaa;
+      box-shadow: 0 0 2px #0002;
+      transition: background 0.5s ease-in-out;
+    }
+  }
+
+  .balance-info {
+    .balance-info-text {
+      font-size: 13px;
+      color: #aaa;
+    }
+  }
 }
 </style>

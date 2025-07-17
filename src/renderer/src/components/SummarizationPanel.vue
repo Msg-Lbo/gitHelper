@@ -8,7 +8,7 @@
     </section>
     <section class="content">
       <n-card size="small" :bordered="false" hoverable content-style="background-color: #23232B">
-        <n-log ref="logInstRef" :log="logRef" :rows="28" :font-size="12" :loading="loading" trim />
+        <n-log ref="logInstRef" :log="logRef" :rows="26.3" :font-size="12" :loading="loading" trim />
       </n-card>
     </section>
     <n-modal v-model:show="showModal" preset="dialog" :title="modalTitle" :mask-closable="false">

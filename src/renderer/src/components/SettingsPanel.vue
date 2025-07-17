@@ -1,39 +1,27 @@
 <template>
   <div class="settings-panel">
-    <n-form label-width="80">
-      <div class="flex flex-1">
+    <n-form label-width="80" size="small">
+      <div class="flex flex-1 gap-10">
         <n-form-item label="Token" class="flex-1">
           <n-input v-model:value="form.token" placeholder="请输入Token" size="small" />
         </n-form-item>
-        <n-form-item label="Git用户名" class="flex-1" style="margin-left: 16px">
+        <n-form-item label="Git用户名" class="flex-1">
           <n-input v-model:value="form.gitUser" placeholder="请输入Git用户名" size="small" />
         </n-form-item>
       </div>
       <n-form-item label="日报模板">
-        <n-input
-          v-model:value="form.dailyTemplate"
-          type="textarea"
-          placeholder="请输入日报模板"
-          size="small"
-          :autosize="{ minRows: 6, maxRows: 6 }"
-          class="template-input"
-        />
+        <n-input v-model:value="form.dailyTemplate" type="textarea" placeholder="请输入日报模板" size="small" :autosize="{ minRows: 6, maxRows: 6 }" class="template-input" />
       </n-form-item>
       <n-form-item label="周报模板">
-        <n-input
-          v-model:value="form.weeklyTemplate"
-          type="textarea"
-          placeholder="请输入周报模板"
-          size="small"
-          :autosize="{ minRows: 6, maxRows: 6 }"
-          class="template-input"
-        />
+        <n-input v-model:value="form.weeklyTemplate" type="textarea" placeholder="请输入周报模板" size="small" :autosize="{ minRows: 6, maxRows: 6 }" class="template-input" />
       </n-form-item>
+    </n-form>
+    <div class="actions">
       <n-space justify="end" gap="12px">
         <n-button type="primary" size="small" @click="saveSettings">保存</n-button>
         <n-button size="small" @click="restoreDefault">恢复默认</n-button>
       </n-space>
-    </n-form>
+    </div>
   </div>
 </template>
 
@@ -87,13 +75,12 @@ const defaultForm = {
 }
 const form = ref({ ...defaultForm })
 const message = useMessage()
-
 const loadSettings = () => {
   const raw = localStorage.getItem(LOCAL_KEY)
   if (raw) {
     try {
       Object.assign(form.value, JSON.parse(raw))
-    } catch {}
+    } catch { }
   }
 }
 const saveSettings = () => {
@@ -116,11 +103,13 @@ loadSettings()
   min-width: 400px;
   max-width: 900px;
   margin: 0 auto;
-  padding-bottom: 32px;
+
+  ::v-deep(.n-form-item .n-form-item-feedback-wrapper) {
+    min-height: 18px;
+  }
+
 }
-.flex-1 {
-  flex: 1;
-}
+
 .template-input {
   width: 100%;
   min-width: 300px;

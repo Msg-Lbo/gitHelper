@@ -1,5 +1,5 @@
 <template>
-  <n-tabs type="line" default-value="report" animated>
+  <n-tabs @update:value="sendSaveEvent" type="line" default-value="report" animated>
     <n-tab-pane name="report" tab="日/周报总结">
       <keep-alive>
         <SummarizationPanel />
@@ -28,4 +28,9 @@ import { NTabs, NTabPane } from 'naive-ui'
 import ProjectManager from './ProjectManager.vue'
 import SettingsPanel from './SettingsPanel.vue'
 import SummarizationPanel from './SummarizationPanel.vue'
+
+const emit = defineEmits(['save'])
+const sendSaveEvent = () => {
+  emit('save')
+}
 </script> 
