@@ -6,6 +6,7 @@ declare global {
     api: {
       minimize: () => void
       close: () => void
+      selectDirectory: () => Promise<string | null>
     }
   }
 }

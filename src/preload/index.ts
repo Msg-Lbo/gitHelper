@@ -3,7 +3,8 @@ import { contextBridge, ipcRenderer } from 'electron'
 // Custom APIs for renderer
 const api = {
   minimize: () => ipcRenderer.send('window-minimize'),
-  close: () => ipcRenderer.send('window-close')
+  close: () => ipcRenderer.send('window-close'),
+  selectDirectory: () => ipcRenderer.invoke('select-directory')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

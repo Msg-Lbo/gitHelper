@@ -1,45 +1,18 @@
 <template>
   <n-config-provider :theme="darkTheme">
     <div class="window-root">
-      <header class="title-bar flex align-center justify-between">
-        <section class="left flex align-center gap-10">
-          <img src="./assets/icon.png" class="logo" />
-          <span class="title">Git Helper</span>
-        </section>
-        <nav class="right flex align-center gap-10" style="-webkit-app-region: no-drag">
-          <n-button quaternary circle @click="minimizeWindow" class="bar-btn">
-            <template #icon>
-              <n-icon>
-                <RemoveOutline />
-              </n-icon>
-            </template>
-          </n-button>
-          <n-button quaternary circle @click="closeWindow" class="bar-btn close">
-            <template #icon>
-              <n-icon>
-                <Close />
-              </n-icon>
-            </template>
-          </n-button>
-        </nav>
-      </header>
-      <main class="content">
-        <slot />
+      <TitleBar />
+      <main class="content flex-1">
+        <HomeTabs />
       </main>
     </div>
   </n-config-provider>
 </template>
 
 <script setup lang="ts">
-import { darkTheme, NConfigProvider, NButton, NIcon } from 'naive-ui'
-import { Close, RemoveOutline } from '@vicons/ionicons5'
-
-const minimizeWindow = () => {
-  window.api?.minimize()
-}
-const closeWindow = () => {
-  window.api?.close()
-}
+import { darkTheme, NConfigProvider } from 'naive-ui'
+import TitleBar from './components/TitleBar.vue'
+import HomeTabs from './components/HomeTabs.vue'
 </script>
 
 <style scoped lang="scss">
@@ -83,17 +56,11 @@ const closeWindow = () => {
       background: #e9546b;
       color: #fff;
     }
-
   }
 }
 
-
-
-
-
 .content {
-  flex: 1;
-  padding: 24px;
+  padding: 0 10px;
   background: #18181c;
   overflow: auto;
 }
