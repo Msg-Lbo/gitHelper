@@ -82,7 +82,7 @@ app.whenReady().then(() => {
       // Linux/Mac 下加 export
       fullCommand = `cd "${projectPath}" && export LANG=zh_CN.GBK && ${command}`
     }
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
       exec(fullCommand, { encoding: 'utf8' }, (error, stdout, stderr) => {
         if (error) {
           resolve(stderr || error.message)
