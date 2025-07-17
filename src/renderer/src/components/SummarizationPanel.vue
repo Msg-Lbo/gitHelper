@@ -12,12 +12,12 @@
       </n-card>
     </section>
     <n-modal v-model:show="showModal" preset="dialog" :title="modalTitle" :mask-closable="false">
-      <div v-if="selectMode === 'single'">
+      <div v-if="selectMode === 'single'" style="margin-top: 20px;">
         <n-radio-group v-model:value="selectedProject">
           <n-radio v-for="p in projectList" :key="p.path" :value="p.path">{{ p.alias }}</n-radio>
         </n-radio-group>
       </div>
-      <div v-else>
+      <div v-else style="margin-top: 20px;">
         <n-checkbox-group v-model:value="selectedProjects">
           <n-checkbox v-for="p in projectList" :key="p.path" :value="p.path">{{
             p.alias
