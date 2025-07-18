@@ -17,7 +17,7 @@
           <div class="balance-info">
             <span class="balance-info-text">
               <span class="balance-info-text-value">
-                ￥{{ balanceInfo?.balance_infos[0].total_balance || 0 }}
+                ￥{{ balanceInfo?.balance_infos[0]?.total_balance || 0 }}
               </span>
             </span>
           </div>
@@ -47,6 +47,8 @@ interface DeepSeekBalance {
 const balanceInfo = ref<DeepSeekBalance>()
 const appVersion = ref('1.0.0') // 应用版本号，可以从package.json中获取
 const { message } = createDiscreteApi(['message'])
+const deepseekToken = ref<string>('')
+
 // 获取配置
 const getSettings = () => {
   const raw = localStorage.getItem('githelper-settings')
@@ -57,12 +59,12 @@ const getSettings = () => {
   }
   return {}
 }
+
 const handleCheckDeepSeekBalance = async () => {
   try {
     const settings = getSettings()
-    const deepseekToken = settings.token || ''
-    if (!deepseekToken) return
-    const res: DeepSeekBalance = await checkDeepSeekBalance(deepseekToken)
+    deepseekToken.value = settings.token || ''
+    const res: DeepSeekBalance = await checkDeepSeekBalance(deepseekToken.value)
     if (res) {
       if (res.is_available) {
         balanceInfo.value = res
@@ -80,8 +82,9 @@ const handleCheckDeepSeekBalance = async () => {
 }
 
 onMounted(() => {
-  handleCheckDeepSeekBalance()
-
+  if (deepseekToken.value) {
+    handleCheckDeepSeekBalance()
+  }
   // 获取应用实际版本号
   try {
     // 在Electron环境中，可以通过window.electron获取版本号

@@ -75,6 +75,7 @@ const defaultForm = {
 }
 const form = ref({ ...defaultForm })
 const message = useMessage()
+const emit = defineEmits(['save'])
 const loadSettings = () => {
   const raw = localStorage.getItem(LOCAL_KEY)
   if (raw) {
@@ -85,6 +86,7 @@ const loadSettings = () => {
 }
 const saveSettings = () => {
   localStorage.setItem(LOCAL_KEY, JSON.stringify(form.value))
+  emit('save')
   message.success('保存成功')
 }
 const restoreDefault = () => {

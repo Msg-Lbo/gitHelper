@@ -17,7 +17,7 @@
     </n-tab-pane>
     <n-tab-pane name="settings" tab="基础设置">
       <keep-alive>
-        <SettingsPanel />
+        <SettingsPanel @save="sendSaveEvent" />
       </keep-alive>
     </n-tab-pane>
   </n-tabs>
