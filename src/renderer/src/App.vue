@@ -7,7 +7,7 @@
           <HomeTabs @save="handleCheckDeepSeekBalance" />
         </main>
         <footer class="footer flex justify-between align-center">
-          <div class="app-version flex align-center gap-5">
+          <div class="app-version flex align-center gap-5" @click="handleVersionClick">
             <div
               class="status-dot"
               :style="{ background: balanceInfo?.is_available ? '#4caf50' : '#e9546b' }"
@@ -24,6 +24,15 @@
         </footer>
       </div>
     </n-message-provider>
+    <UpdateManager
+      v-model:showModal="showUpdateModal"
+      :update-info="updateInfo"
+      :download-progress="downloadProgress"
+      :downloading="downloading"
+      :downloaded="downloaded"
+      @start-download="handleStartDownload"
+      @install-update="handleInstallUpdate"
+    />
   </n-config-provider>
 </template>
 
@@ -31,8 +40,11 @@
 import { darkTheme, NConfigProvider, NMessageProvider, createDiscreteApi } from 'naive-ui'
 import TitleBar from './components/TitleBar.vue'
 import HomeTabs from './components/HomeTabs.vue'
+import UpdateManager from './components/UpdateManager.vue'
 import { checkDeepSeekBalance } from './api/deepseek'
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
+import type { UpdateInfo, ProgressInfo } from 'electron-updater'
+
 interface BalanceInfo {
   currency: string
   total_balance: string
@@ -48,6 +60,19 @@ const balanceInfo = ref<DeepSeekBalance>()
 const appVersion = ref('1.0.0') // 应用版本号，可以从package.json中获取
 const { message } = createDiscreteApi(['message'])
 const deepseekToken = ref<string>('')
+
+// Update related states
+const showUpdateModal = ref(false)
+const updateInfo = ref<UpdateInfo | null>(null)
+const downloadProgress = ref<ProgressInfo>({
+  percent: 0,
+  bytesPerSecond: 0,
+  transferred: 0,
+  total: 0,
+  delta: 0
+})
+const downloading = ref(false)
+const downloaded = ref(false)
 
 // 获取配置
 const getSettings = () => {
@@ -81,6 +106,20 @@ const handleCheckDeepSeekBalance = async () => {
   }
 }
 
+const handleVersionClick = () => {
+  message.info('正在检查新版本...')
+  window.api.checkForUpdate()
+}
+
+const handleStartDownload = () => {
+  downloading.value = true
+  window.api.startDownloadUpdate()
+}
+
+const handleInstallUpdate = () => {
+  window.api.quitAndInstallUpdate()
+}
+
 onMounted(() => {
   if (deepseekToken.value) {
     handleCheckDeepSeekBalance()
@@ -95,6 +134,33 @@ onMounted(() => {
   } catch (error) {
     console.error('获取应用版本失败:', error)
   }
+  // Register update listeners
+  window.api.onUpdateAvailable((info) => {
+    updateInfo.value = info
+    showUpdateModal.value = true
+    downloading.value = false
+    downloaded.value = false
+  })
+  window.api.onUpdateNotAvailable(() => {
+    message.success('当前已是最新版本')
+  })
+  window.api.onDownloadProgress((progress) => {
+    downloadProgress.value = progress
+  })
+  window.api.onUpdateDownloaded(() => {
+    downloading.value = false
+    downloaded.value = true
+    showUpdateModal.value = true // Ensure modal is visible
+  })
+  window.api.onUpdateError((error) => {
+    message.error(`更新失败: ${error}`)
+    downloading.value = false
+    showUpdateModal.value = false
+  })
+})
+
+onUnmounted(() => {
+  window.api.removeAllUpdateListeners()
 })
 </script>
 

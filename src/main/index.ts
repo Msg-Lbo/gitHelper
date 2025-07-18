@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { exec } from 'child_process'
 import os from 'os'
+import { updater } from './updater'
 
 // 禁用硬件加速（如果GPU有问题）
 // app.disableHardwareAcceleration()
@@ -57,6 +58,9 @@ function createWindow(): BrowserWindow {
   if (is.dev) {
     mainWindow.webContents.openDevTools()
   }
+
+  // 初始化 updater
+  updater(mainWindow)
 
   return mainWindow
 }
