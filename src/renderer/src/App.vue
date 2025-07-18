@@ -8,12 +8,17 @@
         </main>
         <footer class="footer flex justify-between align-center">
           <div class="app-version flex align-center gap-5">
-            <div class="status-dot" :style="{ background: balanceInfo?.is_available ? '#4caf50' : '#e9546b' }"></div>
-            <span class="app-version-text">Git Helper v1.0.0</span>
+            <div
+              class="status-dot"
+              :style="{ background: balanceInfo?.is_available ? '#4caf50' : '#e9546b' }"
+            ></div>
+            <span class="app-version-text">Git Helper v{{ appVersion }}-beta</span>
           </div>
           <div class="balance-info">
             <span class="balance-info-text">
-              <span class="balance-info-text-value">￥{{ balanceInfo?.balance_infos[0].total_balance || 0 }}</span>
+              <span class="balance-info-text-value"
+                >￥{{ balanceInfo?.balance_infos[0].total_balance || 0 }}</span
+              >
             </span>
           </div>
         </footer>
@@ -40,16 +45,15 @@ interface DeepSeekBalance {
   balance_infos: BalanceInfo[]
 }
 const balanceInfo = ref<DeepSeekBalance>()
-const { message } = createDiscreteApi([
-  'message'
-])
+const appVersion = ref('1.0.0') // 应用版本号，可以从package.json中获取
+const { message } = createDiscreteApi(['message'])
 // 获取配置
 const getSettings = () => {
   const raw = localStorage.getItem('githelper-settings')
   if (raw) {
     try {
       return JSON.parse(raw)
-    } catch { }
+    } catch {}
   }
   return {}
 }
@@ -57,6 +61,7 @@ const handleCheckDeepSeekBalance = async () => {
   try {
     const settings = getSettings()
     const deepseekToken = settings.token || ''
+    if (!deepseekToken) return
     const res: DeepSeekBalance = await checkDeepSeekBalance(deepseekToken)
     if (res) {
       if (res.is_available) {
@@ -73,8 +78,20 @@ const handleCheckDeepSeekBalance = async () => {
     }
   }
 }
+
 onMounted(() => {
   handleCheckDeepSeekBalance()
+
+  // 获取应用实际版本号
+  try {
+    // 在Electron环境中，可以通过window.electron获取版本号
+    const electronVersion = window.electron?.process.versions.app
+    if (electronVersion) {
+      appVersion.value = electronVersion
+    }
+  } catch (error) {
+    console.error('获取应用版本失败:', error)
+  }
 })
 </script>
 
@@ -133,7 +150,6 @@ onMounted(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  background: #111111;
   padding: 5px 10px;
 
   .app-version {
