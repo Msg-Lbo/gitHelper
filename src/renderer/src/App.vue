@@ -16,9 +16,9 @@
           </div>
           <div class="balance-info">
             <span class="balance-info-text">
-              <span class="balance-info-text-value"
-                >￥{{ balanceInfo?.balance_infos[0].total_balance || 0 }}</span
-              >
+              <span class="balance-info-text-value">
+                ￥{{ balanceInfo?.balance_infos[0].total_balance || 0 }}
+              </span>
             </span>
           </div>
         </footer>
@@ -151,7 +151,7 @@ onMounted(() => {
   left: 0;
   right: 0;
   padding: 5px 10px;
-
+  background: #23232b;
   .app-version {
     font-size: 13px;
     color: #aaa;
