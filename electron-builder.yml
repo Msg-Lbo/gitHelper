@@ -45,3 +45,4 @@ nsis:
   uninstallerIcon: resources/icon.ico
   installerHeaderIcon: resources/icon.ico
   deleteAppDataOnUninstall: false 
+  artifactName: '${productName}-Setup-${version}.${ext}' 

@@ -1,4 +1,4 @@
-name: Release
+name: Build and Release for Windows
 
 on:
   push:
@@ -7,46 +7,80 @@ on:
 
 jobs:
   build:
-    permissions:
-      contents: write
-    # 只在 Windows 环境下运行
+    name: Build on Windows
     runs-on: windows-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build application
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm build:win --publish never
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-windows
+          path: dist
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # 拉取所有历史记录，以便 conventional-changelog 能正常工作
+          fetch-depth: 0
 
-      - name: Setup Node.js
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
-          run_install: false
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
+      - name: Extract Release Notes from CHANGELOG
+        id: get_release_notes
         shell: bash
         run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
+          VERSION=${{ github.ref_name }}
+          VERSION_NUM=${VERSION_TAG#v}
+          awk "/^##+\s$VERSION_NUM/{flag=1;next}/^##+/{flag=0}flag" CHANGELOG.md > RELEASE_NOTES.md
+          echo 'RELEASE_NOTES<<EOF' >> $GITHUB_ENV
+          cat RELEASE_NOTES.md >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
+      
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
         with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build and release for Windows
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm build:win --publish always 
+          name: dist-windows
+          path: artifacts/dist-windows
+      
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: RELEASE_NOTES.md
+          files: artifacts/dist-windows/* 

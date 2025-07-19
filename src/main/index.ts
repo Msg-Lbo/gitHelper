@@ -116,6 +116,9 @@ app.whenReady().then(() => {
       })
     })
   })
+  ipcMain.handle('get-app-version', () => {
+    return app.getVersion()
+  })
 
   // 创建主窗口
   createWindow()

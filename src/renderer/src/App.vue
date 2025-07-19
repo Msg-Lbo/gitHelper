@@ -12,7 +12,13 @@
               class="status-dot"
               :style="{ background: balanceInfo?.is_available ? '#4caf50' : '#e9546b' }"
             ></div>
-            <span class="app-version-text">Git Helper v{{ appVersion }}-beta</span>
+            <span class="app-version-text">Git Helper v{{ appVersion }}</span>
+            <div v-if="updateAvailable" class="update-indicator">
+              <n-icon size="12" color="#4caf50" style="margin-left: 4px">
+                <ArrowUp />
+              </n-icon>
+              <div class="update-badge"></div>
+            </div>
           </div>
           <div class="balance-info">
             <span class="balance-info-text">
@@ -37,13 +43,14 @@
 </template>
 
 <script setup lang="ts">
-import { darkTheme, NConfigProvider, NMessageProvider, createDiscreteApi } from 'naive-ui'
+import { darkTheme, NConfigProvider, NMessageProvider, createDiscreteApi, NIcon } from 'naive-ui'
 import TitleBar from './components/TitleBar.vue'
 import HomeTabs from './components/HomeTabs.vue'
 import UpdateManager from './components/UpdateManager.vue'
 import { checkDeepSeekBalance } from './api/deepseek'
 import { onMounted, onUnmounted, ref } from 'vue'
 import type { UpdateInfo, ProgressInfo } from 'electron-updater'
+import { ArrowUp } from '@vicons/ionicons5'
 
 interface BalanceInfo {
   currency: string
@@ -57,9 +64,10 @@ interface DeepSeekBalance {
   balance_infos: BalanceInfo[]
 }
 const balanceInfo = ref<DeepSeekBalance>()
-const appVersion = ref('1.0.0') // 应用版本号，可以从package.json中获取
+const appVersion = ref('') // 应用版本号，可以从package.json中获取
 const { message } = createDiscreteApi(['message'])
 const deepseekToken = ref<string>('')
+const updateAvailable = ref(false)
 
 // Update related states
 const showUpdateModal = ref(false)
@@ -120,26 +128,19 @@ const handleInstallUpdate = () => {
   window.api.quitAndInstallUpdate()
 }
 
-onMounted(() => {
+onMounted(async () => {
   if (deepseekToken.value) {
     handleCheckDeepSeekBalance()
   }
   // 获取应用实际版本号
-  try {
-    // 在Electron环境中，可以通过window.electron获取版本号
-    const electronVersion = window.electron?.process.versions.app
-    if (electronVersion) {
-      appVersion.value = electronVersion
-    }
-  } catch (error) {
-    console.error('获取应用版本失败:', error)
-  }
+  appVersion.value = await window.api.getAppVersion()
   // Register update listeners
   window.api.onUpdateAvailable((info) => {
     updateInfo.value = info
     showUpdateModal.value = true
     downloading.value = false
     downloaded.value = false
+    updateAvailable.value = true
   })
   window.api.onUpdateNotAvailable(() => {
     message.success('当前已是最新版本')
@@ -243,5 +244,20 @@ onUnmounted(() => {
       color: #aaa;
     }
   }
+}
+.update-indicator {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.update-badge {
+  position: absolute;
+  top: -2px;
+  right: -6px;
+  width: 8px;
+  height: 8px;
+  background-color: #e9546b;
+  border-radius: 50%;
+  border: 1px solid #18181c;
 }
 </style>

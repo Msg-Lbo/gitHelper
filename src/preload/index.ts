@@ -7,6 +7,7 @@ const api = {
   close: () => ipcRenderer.send('window-close'),
   selectDirectory: () => ipcRenderer.invoke('select-directory'),
   runGitLog: (params: { command: string, projectPath: string }) => ipcRenderer.invoke('run-git-log', params),
+  getAppVersion: () => ipcRenderer.invoke('get-app-version'),
   // Updater APIs
   checkForUpdate: () => ipcRenderer.send('check-for-update'),
   startDownloadUpdate: () => ipcRenderer.send('start-download-update'),

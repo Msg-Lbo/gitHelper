@@ -17,20 +17,25 @@ if (!step) {
 console.log(`正在回退版本：${version}`);
 
 try {
-  console.log(`[1/3] 删除本地标签：${version}...`);
+  console.log(`[1/4] 删除本地标签：${version}...`);
   execSync(`git tag -d ${version}`);
   console.log('本地标签删除成功。');
 
-  console.log(`[2/3] 删除远程标签：${version}...`);
+  console.log(`[2/4] 删除远程标签：${version}...`);
   execSync(`git push origin --delete ${version}`);
   console.log('远程标签删除成功。');
 
-  console.log('[3/3] 回退发布提交...');
+  console.log('[3/4] 回退发布提交...');
   execSync(`git reset HEAD~${step}`);
   console.log('提交回退成功。');
 
+  console.log('[4/4] 恢复 package.json 和 CHANGELOG.md...');
+  execSync('git checkout HEAD -- package.json CHANGELOG.md');
+  console.log('package.json 和 CHANGELOG.md 已恢复。');
+
   execSync('git push -f');
-  console.log('版本提交已回退。');
+  console.log('版本回退已完成，并已强制推送到远程仓库。');
+
 
 } catch (error) {
   console.error('\n回退过程中发生错误：');

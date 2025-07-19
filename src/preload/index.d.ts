@@ -9,6 +9,7 @@ declare global {
       close: () => void
       selectDirectory: () => Promise<string | null>
       runGitLog: (params: { command: string; projectPath: string }) => Promise<string>
+      getAppVersion: () => Promise<string>
       // Updater APIs
       checkForUpdate: () => void
       startDownloadUpdate: () => void
