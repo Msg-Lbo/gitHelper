@@ -38,6 +38,7 @@
       :downloaded="downloaded"
       @start-download="handleStartDownload"
       @install-update="handleInstallUpdate"
+      @cancel-download="handleCancelDownload"
     />
   </n-config-provider>
 </template>
@@ -135,6 +136,13 @@ const handleStartDownload = () => {
 
 const handleInstallUpdate = () => {
   window.api.quitAndInstallUpdate()
+}
+
+const handleCancelDownload = () => {
+  window.api.cancelDownloadUpdate()
+  showUpdateModal.value = false
+  downloading.value = false
+  message.warning('下载已取消')
 }
 
 onMounted(async () => {

@@ -13,6 +13,7 @@ declare global {
       // Updater APIs
       checkForUpdate: () => void
       startDownloadUpdate: () => void
+      cancelDownloadUpdate: () => void
       quitAndInstallUpdate: () => void
       onUpdateAvailable: (callback: (info: UpdateInfo) => void) => void
       onUpdateNotAvailable: (callback: () => void) => void

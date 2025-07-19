@@ -25,7 +25,8 @@
                     <n-button type="primary" @click="startDownload" :disabled="downloading">
                         {{ downloading ? '正在下载...' : '立即下载' }}
                     </n-button>
-                    <n-button @click="show = false">稍后</n-button>
+                    <n-button v-if="downloading" type="error" @click="cancelDownload">取消</n-button>
+                    <n-button @click="show = false" :disabled="downloading">稍后</n-button>
                 </n-space>
             </div>
             <div v-else>
@@ -52,7 +53,7 @@ const props = defineProps<{
     downloaded: boolean
 }>()
 
-const emit = defineEmits(['update:showModal', 'start-download', 'install-update'])
+const emit = defineEmits(['update:showModal', 'start-download', 'install-update', 'cancel-download'])
 
 const show = computed({
     get: () => props.showModal,
@@ -76,6 +77,10 @@ const startDownload = () => {
 
 const installUpdate = () => {
     emit('install-update')
+}
+
+const cancelDownload = () => {
+    emit('cancel-download')
 }
 </script>
 

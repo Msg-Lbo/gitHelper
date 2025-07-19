@@ -1,5 +1,7 @@
-import { autoUpdater, UpdateInfo, ProgressInfo } from 'electron-updater'
+import { autoUpdater, UpdateInfo, ProgressInfo, CancellationToken } from 'electron-updater'
 import { ipcMain, BrowserWindow } from 'electron'
+
+let cancellationToken: CancellationToken | null
 
 export function updater(win: BrowserWindow) {
   // 关闭自动下载，让用户点击后再开始下载
@@ -27,8 +29,9 @@ export function updater(win: BrowserWindow) {
 
   // 开始下载更新
   ipcMain.on('start-download-update', () => {
-    autoUpdater.downloadUpdate().catch((err) => {
-      win.webContents.send('update-error', `下载更新失败: ${err.message}`)
+    cancellationToken = new CancellationToken()
+    autoUpdater.downloadUpdate(cancellationToken).catch(() => {
+      // 捕获取消错误，此处无需处理，错误事件会统一处理
     })
   })
 
@@ -39,6 +42,7 @@ export function updater(win: BrowserWindow) {
 
   // 监听更新下载完成
   autoUpdater.on('update-downloaded', () => {
+    cancellationToken = null
     win.webContents.send('update-downloaded')
   })
 
@@ -46,10 +50,23 @@ export function updater(win: BrowserWindow) {
   ipcMain.on('quit-and-install-update', () => {
     autoUpdater.quitAndInstall()
   })
+  
+  // 取消下载更新
+  ipcMain.on('cancel-download-update', () => {
+    if (cancellationToken) {
+      cancellationToken.cancel()
+      cancellationToken = null
+    }
+  })
 
   // 监听更新错误
   autoUpdater.on('error', (err) => {
-    win.webContents.send('update-error', `更新过程中发生错误: ${err.message}`)
+    // 用户主动取消下载会触发一个 error，需要将其与真实错误区分开
+    if (err.message.includes('Cancelled')) {
+      console.log('Download cancelled by user.')
+    } else {
+      win.webContents.send('update-error', `更新过程中发生错误: ${err.message}`)
+    }
   })
   
   // 应用启动后，延迟1秒自动检查更新

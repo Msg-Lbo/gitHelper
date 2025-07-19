@@ -11,6 +11,7 @@ const api = {
   // Updater APIs
   checkForUpdate: () => ipcRenderer.send('check-for-update'),
   startDownloadUpdate: () => ipcRenderer.send('start-download-update'),
+  cancelDownloadUpdate: () => ipcRenderer.send('cancel-download-update'),
   quitAndInstallUpdate: () => ipcRenderer.send('quit-and-install-update'),
   onUpdateAvailable: (callback: (info: UpdateInfo) => void) =>
     ipcRenderer.on('update-available', (_event, info) => callback(info)),
