@@ -63,9 +63,18 @@ interface DeepSeekBalance {
   is_available: boolean
   balance_infos: BalanceInfo[]
 }
+
 const balanceInfo = ref<DeepSeekBalance>()
 const appVersion = ref('') // 应用版本号，可以从package.json中获取
-const { message } = createDiscreteApi(['message'])
+const { message } = createDiscreteApi(['message'], {
+  configProviderProps: {
+    theme: darkTheme
+  },
+  messageProviderProps: {
+    placement: 'top-right',
+    containerStyle: 'top: 50px'
+  }
+})
 const deepseekToken = ref<string>('')
 const updateAvailable = ref(false)
 
