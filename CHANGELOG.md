@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.2](https://github.com/Msg-Lbo/gitHelper/compare/v0.0.1...v0.0.2) (2025-07-19)
+
+
+### Features
+
+* 更新消息组件配置，调整消息显示位置和样式 ([5729e5f](https://github.com/Msg-Lbo/gitHelper/commit/5729e5f0d208097bac84edb0a0ba17715472072c))
+* 修补release，跳过草案人工审核，直接发布 ([7ebae23](https://github.com/Msg-Lbo/gitHelper/commit/7ebae23161d8906274bd6de25a87e01fc02f02e1))
+
 ### 0.0.1 (2025-07-19)
 
 
