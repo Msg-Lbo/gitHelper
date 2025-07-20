@@ -1,5 +1,3 @@
-import axios from 'axios'
-
 // 使用 fetch 支持流式传输
 export const chatWithDeepSeek = async (
   messages: any[],
@@ -23,10 +21,13 @@ export const chatWithDeepSeek = async (
 }
 
 export const checkDeepSeekBalance = async (token: string) => {
-  const response = await axios.get('https://api.deepseek.com/user/balance', {
+  const response = await fetch('https://api.deepseek.com/user/balance', {
     headers: {
       Authorization: `Bearer ${token}`
     }
   })
-  return response.data
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+  return response.json()
 }

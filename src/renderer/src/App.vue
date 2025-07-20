@@ -12,7 +12,7 @@
               class="status-dot"
               :style="{ background: balanceInfo?.is_available ? '#4caf50' : '#e9546b' }"
             ></div>
-            <span class="app-version-text">Git Helper v{{ appVersion }}-beta</span>
+            <span class="app-version-text">Git Helper v{{ appVersion }}</span>
           </div>
           <div class="balance-info">
             <span class="balance-info-text">
@@ -33,6 +33,7 @@ import TitleBar from './components/TitleBar.vue'
 import HomeTabs from './components/HomeTabs.vue'
 import { checkDeepSeekBalance } from './api/deepseek'
 import { onMounted, ref } from 'vue'
+
 interface BalanceInfo {
   currency: string
   total_balance: string
@@ -44,9 +45,18 @@ interface DeepSeekBalance {
   is_available: boolean
   balance_infos: BalanceInfo[]
 }
+
 const balanceInfo = ref<DeepSeekBalance>()
-const appVersion = ref('1.0.0') // 应用版本号，可以从package.json中获取
-const { message } = createDiscreteApi(['message'])
+const appVersion = ref('') // 应用版本号，可以从package.json中获取
+const { message } = createDiscreteApi(['message'], {
+  configProviderProps: {
+    theme: darkTheme
+  },
+  messageProviderProps: {
+    placement: 'top-right',
+    containerStyle: 'top: 50px'
+  }
+})
 const deepseekToken = ref<string>('')
 
 // 获取配置
@@ -81,20 +91,12 @@ const handleCheckDeepSeekBalance = async () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   if (deepseekToken.value) {
     handleCheckDeepSeekBalance()
   }
   // 获取应用实际版本号
-  try {
-    // 在Electron环境中，可以通过window.electron获取版本号
-    const electronVersion = window.electron?.process.versions.app
-    if (electronVersion) {
-      appVersion.value = electronVersion
-    }
-  } catch (error) {
-    console.error('获取应用版本失败:', error)
-  }
+  appVersion.value = await window.api.getAppVersion()
 })
 </script>
 

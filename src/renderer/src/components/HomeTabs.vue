@@ -10,11 +10,6 @@
         <ProjectManager />
       </keep-alive>
     </n-tab-pane>
-    <n-tab-pane name="oa" tab="OA系统">
-      <keep-alive>
-        <div>这里是OA系统内容</div>
-      </keep-alive>
-    </n-tab-pane>
     <n-tab-pane name="settings" tab="基础设置">
       <keep-alive>
         <SettingsPanel @save="sendSaveEvent" />

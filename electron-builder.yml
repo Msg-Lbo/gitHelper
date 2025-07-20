@@ -1,0 +1,33 @@
+appId: com.electron.app
+productName: githelper
+
+# Top-level properties
+directories:
+  output: dist
+  buildResources: build
+
+asarUnpack:
+  - resources/**
+
+# Platform-specific settings
+win:
+  target:
+    - nsis
+  executableName: githelper
+  icon: resources/icon.ico
+
+nsis:
+  oneClick: false
+  perMachine: true
+  allowToChangeInstallationDirectory: true
+  allowElevation: true
+  language: '2052'
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: GitHelper
+  uninstallDisplayName: GitHelper
+  installerIcon: resources/icon.ico
+  uninstallerIcon: resources/icon.ico
+  installerHeaderIcon: resources/icon.ico
+  deleteAppDataOnUninstall: false 
+  artifactName: '${productName}-Setup-${version}.${ext}' 

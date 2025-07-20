@@ -27,5 +27,4 @@ Thumbs.db
 
 # 锁文件（如不希望锁文件被跟踪，可取消注释）
 yarn.lock
-pnpm-lock.yaml
 package-lock.json
