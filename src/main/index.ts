@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { exec } from 'child_process'
 import os from 'os'
+import { pathToFileURL } from 'url'
 
 // 禁用硬件加速（如果GPU有问题）
 // app.disableHardwareAcceleration()
@@ -74,8 +75,12 @@ app.whenReady().then(() => {
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     // 我们可以根据URL过滤，只打印目标网站的headers
     if (details.url.startsWith('https://ai.mufengweilai.com/')) {
-      console.log('OA Page URL:', details.url)
-      console.log('OA Page Headers:', details.responseHeaders)
+      console.log('OA Page Response:', {
+        url: details.url,
+        statusCode: details.statusCode,
+        statusLine: details.statusLine,
+        headers: details.responseHeaders
+      })
     }
     callback({ responseHeaders: details.responseHeaders })
   })
@@ -126,6 +131,25 @@ app.whenReady().then(() => {
   })
   ipcMain.handle('get-app-version', () => {
     return app.getVersion()
+  })
+
+  // 新增：获取webview预加载脚本的路径
+  ipcMain.handle('get-webview-preload-path', () => {
+    const preloadPath = join(__dirname, '../preload/webviewPreload.js')
+    return pathToFileURL(preloadPath).href
+  })
+
+  // 新增：清除OA网站的会话数据
+  ipcMain.on('clear-oa-session', async () => {
+    try {
+      await session.defaultSession.clearStorageData({
+        origin: 'https://ai.mufengweilai.com',
+        storages: ['cookies', 'localstorage']
+      })
+      console.log('OA session data cleared from main process.')
+    } catch (error) {
+      console.error('Failed to clear OA session data:', error)
+    }
   })
 
   // 创建主窗口
