@@ -17,6 +17,7 @@ function createWindow(): BrowserWindow {
     frame: false, // 无边框，准备自定义工具栏
     show: false,
     autoHideMenuBar: true,
+    alwaysOnTop: is.dev,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

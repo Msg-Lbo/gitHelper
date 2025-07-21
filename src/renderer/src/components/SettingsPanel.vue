@@ -1,19 +1,47 @@
 <template>
   <div class="settings-panel">
     <n-form label-width="80" size="small">
-      <div class="flex flex-1 gap-10">
-        <n-form-item label="Token" class="flex-1">
-          <n-input v-model:value="form.token" placeholder="请输入Token" size="small" />
-        </n-form-item>
-        <n-form-item label="Git用户名" class="flex-1">
-          <n-input v-model:value="form.gitUser" placeholder="请输入Git用户名" size="small" />
-        </n-form-item>
-      </div>
+      <n-grid :cols="4" :x-gap="24">
+        <n-gi>
+          <n-form-item label="Token">
+            <n-input v-model:value="form.token" placeholder="请输入Token" size="small" />
+          </n-form-item>
+        </n-gi>
+        <n-gi>
+          <n-form-item label="Git用户名">
+            <n-input v-model:value="form.gitUser" placeholder="请输入Git用户名" size="small" />
+          </n-form-item>
+        </n-gi>
+        <n-gi>
+          <n-form-item label="OA账号">
+            <n-input v-model:value="form.oaAccount" placeholder="请输入OA账号" size="small" />
+          </n-form-item>
+        </n-gi>
+        <n-gi>
+          <n-form-item label="OA密码">
+            <n-input v-model:value="form.oaPassword" placeholder="请输入OA密码" size="small" />
+          </n-form-item>
+        </n-gi>
+      </n-grid>
       <n-form-item label="日报模板">
-        <n-input v-model:value="form.dailyTemplate" type="textarea" placeholder="请输入日报模板" size="small" :autosize="{ minRows: 6, maxRows: 6 }" class="template-input" />
+        <n-input
+          v-model:value="form.dailyTemplate"
+          type="textarea"
+          placeholder="请输入日报模板"
+          size="small"
+          :autosize="{ minRows: 6, maxRows: 6 }"
+          class="template-input"
+        />
       </n-form-item>
       <n-form-item label="周报模板">
-        <n-input v-model:value="form.weeklyTemplate" type="textarea" placeholder="请输入周报模板" size="small" :autosize="{ minRows: 6, maxRows: 6 }" class="template-input" />
+        <n-input
+          v-model:value="form.weeklyTemplate"
+          type="textarea"
+          placeholder="请输入周报模板"
+          size="small"
+          :autosize="{ minRows: 6, maxRows: 6 }"
+          class="template-input"
+        />
       </n-form-item>
     </n-form>
     <div class="actions">
@@ -27,7 +55,16 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { NForm, NFormItem, NInput, NButton, useMessage, NSpace } from 'naive-ui'
+import {
+  NForm,
+  NFormItem,
+  NInput,
+  NButton,
+  useMessage,
+  NSpace,
+  NGrid,
+  NGi
+} from 'naive-ui'
 
 const DEFAULT_DAILY = `你是一位专业的团队领导，你的任务是分析 Git commit 日志并生成一份清晰的工作总结。
 请遵循以下规则:
@@ -71,7 +108,9 @@ const defaultForm = {
   token: '',
   gitUser: '',
   dailyTemplate: DEFAULT_DAILY,
-  weeklyTemplate: DEFAULT_WEEKLY
+  weeklyTemplate: DEFAULT_WEEKLY,
+  oaAccount: '',
+  oaPassword: ''
 }
 const form = ref({ ...defaultForm })
 const message = useMessage()
@@ -81,7 +120,7 @@ const loadSettings = () => {
   if (raw) {
     try {
       Object.assign(form.value, JSON.parse(raw))
-    } catch { }
+    } catch {}
   }
 }
 const saveSettings = () => {
@@ -109,7 +148,6 @@ loadSettings()
   ::v-deep(.n-form-item .n-form-item-feedback-wrapper) {
     min-height: 18px;
   }
-
 }
 
 .template-input {

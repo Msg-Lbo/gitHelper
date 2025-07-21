@@ -10,7 +10,7 @@
         <ProjectManager />
       </keep-alive>
     </n-tab-pane>
-    <n-tab-pane name="oa" tab="OA系统">
+    <n-tab-pane name="oa" tab="OA系统" display-directive="show">
       <keep-alive>
         <OA />
       </keep-alive>
