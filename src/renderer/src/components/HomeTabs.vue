@@ -10,6 +10,11 @@
         <ProjectManager />
       </keep-alive>
     </n-tab-pane>
+    <n-tab-pane name="oa" tab="OA系统">
+      <keep-alive>
+        <OA />
+      </keep-alive>
+    </n-tab-pane>
     <n-tab-pane name="settings" tab="基础设置">
       <keep-alive>
         <SettingsPanel @save="sendSaveEvent" />
@@ -22,6 +27,8 @@
 import { NTabs, NTabPane } from 'naive-ui'
 import ProjectManager from './ProjectManager.vue'
 import SettingsPanel from './SettingsPanel.vue'
+// @ts-ignore
+import OA from './OA.vue'
 import SummarizationPanel from './SummarizationPanel.vue'
 
 const emit = defineEmits(['save'])

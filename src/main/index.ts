@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, session } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -22,7 +22,8 @@ function createWindow(): BrowserWindow {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      webviewTag: true // 允许在渲染进程中使用 <webview> 标签
     }
   })
   // 窗口加载完成
@@ -35,7 +36,7 @@ function createWindow(): BrowserWindow {
     return { action: 'deny' }
   })
 
-  // 加载HTML文件
+  // 恢复加载本地HTML文件
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     // 加载开发URL
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']).catch((err) => {
@@ -67,6 +68,16 @@ function createWindow(): BrowserWindow {
 app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
+
+  // 监听所有网络请求的响应头
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    // 我们可以根据URL过滤，只打印目标网站的headers
+    if (details.url.startsWith('https://ai.mufengweilai.com/')) {
+      console.log('OA Page URL:', details.url)
+      console.log('OA Page Headers:', details.responseHeaders)
+    }
+    callback({ responseHeaders: details.responseHeaders })
+  })
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.

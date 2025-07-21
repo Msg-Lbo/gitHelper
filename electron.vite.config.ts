@@ -15,7 +15,16 @@ export default defineConfig({
         '@renderer': resolve('src/renderer/src')
       }
     },
-    plugins: [vue()],
+    plugins: [
+      vue({
+        template: {
+          compilerOptions: {
+            // 将 webview 标签视为自定义元素
+            isCustomElement: (tag) => tag === 'webview'
+          }
+        }
+      })
+    ],
     build: {
       // 添加这些选项来解决crypto.hash问题
       rollupOptions: {
