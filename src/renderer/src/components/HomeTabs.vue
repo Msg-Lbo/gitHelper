@@ -1,6 +1,6 @@
 <template>
   <n-tabs @update:value="sendSaveEvent" type="line" default-value="report" animated>
-    <n-tab-pane name="report" tab="日/周报总结">
+    <n-tab-pane name="report" tab="日/周报总结" display-directive="show">
       <keep-alive>
         <SummarizationPanel />
       </keep-alive>
@@ -28,4 +28,4 @@ const emit = defineEmits(['save'])
 const sendSaveEvent = () => {
   emit('save')
 }
-</script> 
+</script>
