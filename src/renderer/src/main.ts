@@ -1,8 +1,10 @@
 import './assets/style/style.scss'
 import { createApp } from 'vue'
 import App from './App.vue'
+
 try {
   const app = createApp(App)
+
   app.config.errorHandler = (err, _vm, info) => {
     console.error('Vue错误:', err, info)
   }

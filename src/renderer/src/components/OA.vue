@@ -29,7 +29,7 @@
       <n-card title="🎉 登录成功" hoverable>
         <p>已成功获取到您的 OA Token，并已保存供其他功能使用。</p>
         <n-blockquote>
-          <n-code>{{ oaToken }}</n-code>
+          <code style="background: #2a2a32; padding: 8px; border-radius: 4px; display: block; word-break: break-all; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; color: #4f9eff;">{{ oaToken }}</code>
         </n-blockquote>
         <template #footer>
           <n-button type="error" ghost @click="logout">退出登录</n-button>
@@ -41,8 +41,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch, nextTick } from 'vue'
-import { NButton, NIcon, NCard, NBlockquote, NCode } from 'naive-ui'
+import { NButton, NIcon, NCard, NBlockquote, useMessage } from 'naive-ui'
 import { ReloadOutline } from '@vicons/ionicons5'
+import { getCompressedOAStyles } from '../styles/oa-injection'
 
 // --- 响应式状态定义 ---
 
@@ -54,6 +55,11 @@ const webviewRef = ref<Electron.WebviewTag | null>(null)
 const LOCAL_SETTINGS_KEY = 'githelper-settings'
 // 保存从OA系统获取的Token
 const oaToken = ref<string | null>(null)
+// 消息提示功能
+const message = useMessage()
+// 防重复消息的时间戳
+let lastMessageTime = 0
+let lastMessageContent = ''
 
 // --- 方法定义 ---
 
@@ -118,109 +124,307 @@ onMounted(async () => {
 })
 
 /**
+ * 处理登录成功
+ */
+function handleLoginSuccess(token: string) {
+  const currentTime = Date.now()
+  const successMsg = '登录成功！'
+
+  // 防止重复消息（1秒内相同内容的消息只显示一次）
+  if (currentTime - lastMessageTime < 1000 && lastMessageContent === successMsg) {
+    console.log('重复的成功消息，跳过显示:', successMsg)
+    return
+  }
+
+  lastMessageTime = currentTime
+  lastMessageContent = successMsg
+
+  oaToken.value = token
+  console.log('显示成功消息:', successMsg)
+  message.success(successMsg)
+
+  // 保存Token到本地存储
+  try {
+    const settings = JSON.parse(localStorage.getItem(LOCAL_SETTINGS_KEY) || '{}')
+    settings.oaToken = token
+    localStorage.setItem(LOCAL_SETTINGS_KEY, JSON.stringify(settings))
+  } catch (e) {
+    console.error('保存OA Token失败:', e)
+  }
+}
+
+/**
+ * 处理登录失败
+ */
+function handleLoginFail(errorMsg?: string) {
+  const msg = errorMsg || '登录失败，请检查账号密码'
+  const currentTime = Date.now()
+
+  // 防止重复消息（1秒内相同内容的消息只显示一次）
+  if (currentTime - lastMessageTime < 1000 && lastMessageContent === msg) {
+    console.log('重复的错误消息，跳过显示:', msg)
+    return
+  }
+
+  lastMessageTime = currentTime
+  lastMessageContent = msg
+  console.log('显示错误消息:', msg)
+  message.error(msg)
+}
+
+/**
+ * 设置IPC消息监听器
+ */
+function setupIPCListeners(webview: Electron.WebviewTag) {
+  // 防止重复添加监听器
+  if ((webview as any)._ipcListenerAdded) {
+    console.log('IPC 监听器已存在，跳过添加')
+    return
+  }
+
+  console.log('添加 IPC 消息监听器')
+  ;(webview as any)._ipcListenerAdded = true
+
+  webview.addEventListener('ipc-message', (event) => {
+    console.log('收到 IPC 消息:', event.channel, event.args)
+
+    if (event.channel === 'login-success') {
+      handleLoginSuccess(event.args[0])
+    } else if (event.channel === 'login-fail') {
+      handleLoginFail(event.args[0])
+    }
+  })
+}
+
+/**
+ * 设置页面加载监听器
+ */
+function setupPageLoadListeners(webview: Electron.WebviewTag) {
+  // 防止重复添加监听器
+  if ((webview as any)._pageListenerAdded) {
+    console.log('页面监听器已存在，跳过添加')
+    return
+  }
+
+  console.log('添加页面加载监听器')
+  ;(webview as any)._pageListenerAdded = true
+
+  // 监听WebView控制台消息（用于调试）
+  webview.addEventListener('console-message', (event: any) => {
+    console.log('WebView Console:', event.message)
+  })
+
+  // 监听页面DOM加载完成事件
+  webview.addEventListener('dom-ready', () => {
+    console.log('DOM 加载完成，开始注入脚本')
+
+    // 注入CSS样式
+    webview.insertCSS(getCompressedOAStyles())
+
+    // 注入登录监听脚本
+    injectLoginMonitorScript(webview)
+
+    // 自动填充表单
+    autoFillForm(webview)
+  })
+}
+
+/**
+ * 注入登录监听脚本
+ */
+function injectLoginMonitorScript(webview: Electron.WebviewTag) {
+  const loginMonitorScript = `
+    // 防止重复注入 - 使用更强的检查机制
+    if (window.oaLoginMonitorInjected) {
+      console.log('登录监听脚本已存在，跳过注入');
+    } else {
+      window.oaLoginMonitorInjected = true;
+      console.log('开始注入登录监听脚本');
+
+    // 保存原始方法
+    const originalFetch = window.fetch;
+    const originalXHROpen = XMLHttpRequest.prototype.open;
+    const originalXHRSend = XMLHttpRequest.prototype.send;
+
+    // 拦截 fetch 请求
+    if (window.fetch) {
+      window.fetch = function(...args) {
+        const [url, options] = args;
+        return originalFetch.apply(this, args).then(res => {
+          if (String(url).includes('/api/oa/login')) {
+            res.clone().json().then(data => {
+              handleLoginResponse(data);
+            }).catch(err => {
+              console.error('解析登录响应失败:', err);
+            });
+          }
+          return res;
+        });
+      };
+    }
+
+    // 拦截 XMLHttpRequest
+    XMLHttpRequest.prototype.open = function(method, url) {
+      this._url = url;
+      this._method = method;
+      return originalXHROpen.apply(this, arguments);
+    };
+
+    XMLHttpRequest.prototype.send = function(data) {
+      const self = this;
+      this.addEventListener('load', function() {
+        if (String(self._url).includes('/api/oa/login')) {
+          try {
+            const responseData = JSON.parse(self.responseText);
+            handleLoginResponse(responseData);
+          } catch (e) {
+            console.error('解析登录响应失败:', e);
+          }
+        }
+      });
+      return originalXHRSend.apply(this, arguments);
+    };
+
+      // 统一处理登录响应
+      function handleLoginResponse(data) {
+        console.log('处理登录响应:', data);
+        if (data.code === 200 && data.token) {
+          console.log('登录成功，发送 login-success 事件');
+          window.webviewApi && window.webviewApi.sendToHost('login-success', data.token);
+        } else {
+          console.log('登录失败，发送 login-fail 事件:', data.msg);
+          window.webviewApi && window.webviewApi.sendToHost('login-fail', data.msg || '登录失败');
+        }
+      }
+
+      console.log('登录监听脚本注入完成');
+    }
+
+    null;
+  `
+  webview.executeJavaScript(loginMonitorScript)
+}
+
+/**
+ * 自动填充表单
+ */
+function autoFillForm(webview: Electron.WebviewTag) {
+  setTimeout(() => {
+    const rawSettings = localStorage.getItem(LOCAL_SETTINGS_KEY)
+    if (!rawSettings) return
+
+    try {
+      const settings = JSON.parse(rawSettings)
+      if (settings.oaAccount && settings.oaPassword) {
+        const fillFormScript = `
+          // 防止重复注入
+          if (window.oaAutoFillInjected) {
+            console.log('自动填充脚本已存在，跳过注入');
+          } else {
+            window.oaAutoFillInjected = true;
+            console.log('开始注入自动填充脚本');
+
+          function fillForm() {
+            const phoneSelectors = [
+              'input[placeholder*="手机"]',
+              'input[placeholder*="账号"]',
+              'input[placeholder*="用户名"]',
+              'input[type="text"]',
+              '.el-input__inner[placeholder*="手机"]',
+              '.el-input__inner[placeholder*="账号"]'
+            ];
+
+            const passwordSelectors = [
+              'input[placeholder*="密码"]',
+              'input[type="password"]',
+              '.el-input__inner[type="password"]'
+            ];
+
+            let phoneInput = null;
+            let passwordInput = null;
+
+            for (const selector of phoneSelectors) {
+              phoneInput = document.querySelector(selector);
+              if (phoneInput) break;
+            }
+
+            for (const selector of passwordSelectors) {
+              passwordInput = document.querySelector(selector);
+              if (passwordInput) break;
+            }
+
+            if (phoneInput && passwordInput) {
+              phoneInput.value = '${settings.oaAccount.replace(/'/g, "\\'")}';
+              phoneInput.dispatchEvent(new Event('input', { bubbles: true }));
+              phoneInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+              passwordInput.value = '${settings.oaPassword.replace(/'/g, "\\'")}';
+              passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
+              passwordInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+              return true;
+            }
+            return false;
+          }
+
+            if (!fillForm()) {
+              setTimeout(() => {
+                if (!fillForm()) {
+                  setTimeout(fillForm, 2000);
+                }
+              }, 1000);
+            }
+
+            console.log('自动填充脚本注入完成');
+          }
+
+          null;
+        `
+        webview.executeJavaScript(fillFormScript)
+      }
+    } catch (e) {
+      console.error('自动填充失败:', e)
+    }
+  }, 500)
+}
+
+/**
  * 监听webviewRef的变化。
  * 由于webview是v-if异步渲染的，必须使用watch来确保在DOM元素实际创建后再附加事件监听器。
  */
 watch(webviewRef, (webview) => {
   if (webview) {
-    // 监听从Webview内部通过IPC发送来的消息
-    webview.addEventListener('ipc-message', (event) => {
-      // 监听到登录成功的消息
-      if (event.channel === 'login-success') {
-        const receivedToken = event.args[0]
-        oaToken.value = receivedToken // 更新UI状态，显示成功界面
-        // 将Token保存到本地存储
-        try {
-          const settings = JSON.parse(localStorage.getItem(LOCAL_SETTINGS_KEY) || '{}')
-          settings.oaToken = receivedToken
-          localStorage.setItem(LOCAL_SETTINGS_KEY, JSON.stringify(settings))
-        } catch (e) {
-          console.error('保存OA Token失败:', e)
-        }
-      }
-    })
+    // 设置IPC消息监听器
+    setupIPCListeners(webview)
 
-    // 监听Webview内部页面DOM加载完成的事件
-    webview.addEventListener('dom-ready', () => {
-      // 定义并注入自定义CSS，美化登录页外观
-      const cssToInject = `
-        /* 此处省略大量CSS样式代码... */
-        html, body { background: transparent !important; }
-        .login .left { display: none !important; }
-      `
-      webview.insertCSS(cssToInject.replace(/\s+/g, ' ')) // 压缩并注入
+    // 设置页面加载监听器
+    setupPageLoadListeners(webview)
+  }
+})
 
-      // 定义并注入JS脚本，用于拦截页面内的网络请求
-      const jsToInject = `
-        // 拦截现代浏览器使用的fetch API
-        if (window.fetch) {
-          const originalFetch = window.fetch;
-          window.fetch = function(...args) {
-            const [url] = args;
-            return originalFetch.apply(this, args).then(res => {
-              if (String(url).includes('/api/oa/login') && res.status === 200) {
-                res.clone().json().then(data => {
-                  if (data.code === 200 && data.token) {
-                    window.webviewApi.sendToHost('login-success', data.token);
-                  }
-                });
-              }
-              return res;
-            });
-          };
-        }
-        // 拦截传统的XMLHttpRequest API
-        if (window.XMLHttpRequest) {
-          const originalXhrOpen = XMLHttpRequest.prototype.open;
-          XMLHttpRequest.prototype.open = function(method, url) {
-            this._url = url;
-            return originalXhrOpen.apply(this, arguments);
-          };
-          const originalXhrSend = XMLHttpRequest.prototype.send;
-          XMLHttpRequest.prototype.send = function() {
-            this.addEventListener('load', function() {
-              if (String(this._url).includes('/api/oa/login') && this.status === 200) {
-                try {
-                  const data = JSON.parse(this.responseText);
-                  if (data.code === 200 && data.token) {
-                    window.webviewApi.sendToHost('login-success', data.token);
-                  }
-                } catch (e) {}
-              }
-            });
-            return originalXhrSend.apply(this, arguments);
-          };
-        }
-        null; // 确保脚本执行后返回一个可序列化的值
-      `
-      webview.executeJavaScript(jsToInject)
+/**
+ * 监听webviewRef的变化。
+ * 由于webview是v-if异步渲染的，必须使用watch来确保在DOM元素实际创建后再附加事件监听器。
+ */
+watch(webviewRef, (webview) => {
+  if (webview) {
+    // 设置IPC消息监听器
+    setupIPCListeners(webview)
 
-      // 定义并注入JS脚本，用于自动填充表单
-      const rawSettings = localStorage.getItem(LOCAL_SETTINGS_KEY)
-      if (!rawSettings) return
-      try {
-        const settings = JSON.parse(rawSettings)
-        if (settings.oaAccount && settings.oaPassword) {
-          const fillFormJs = `
-            document.querySelector('input[placeholder*="账号"]').value = '${settings.oaAccount.replace(/'/g, "\\'")}';
-            document.querySelector('input[placeholder*="密码"]').value = '${settings.oaPassword.replace(/'/g, "\\'")}';
-            null;
-          `
-          webview.executeJavaScript(fillFormJs)
-        }
-      } catch (e) {}
-    })
+    // 设置页面加载监听器
+    setupPageLoadListeners(webview)
   }
 })
 </script>
 
 <style scoped lang="scss">
 .oa-container {
-  width: 100vw;
+  width: 100%;
   height: calc(100vh - 70px);
   display: flex;
   justify-content: center;
   align-items: center;
+  background: #18181c;
 }
 
 .oa-webview {

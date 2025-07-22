@@ -1,9 +1,11 @@
+// 动态生成间距工具类
 @for $f from 5 to 60 {
 	.gap-#{$f} {
-		gap: $f + px;
+		gap: #{$f}px;
 	}
 }
 
+// 动态生成文本截断工具类
 @for $f from 1 to 10 {
 	.line-clamp-#{$f} {
 		display: -webkit-box;

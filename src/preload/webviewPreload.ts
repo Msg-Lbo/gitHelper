@@ -4,7 +4,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 contextBridge.exposeInMainWorld('webviewApi', {
   sendToHost: (channel: string, ...args: any[]) => {
     // Whitelist channels to prevent sending arbitrary IPC messages
-    const validChannels = ['login-success', 'debug-log']
+    const validChannels = ['login-success', 'login-fail', 'debug-log']
     if (validChannels.includes(channel)) {
       ipcRenderer.sendToHost(channel, ...args)
     }
