@@ -2,7 +2,12 @@
   <div class="summarization-panel">
     <section class="header">
       <n-space justify="start" align="center">
-        <n-button type="info" size="small" @click="openProjectModal('daily')">总结日报</n-button>
+        <n-button type="info" size="small" @click="openProjectModal('daily')"
+          >总结正常日报</n-button
+        >
+        <n-button type="info" size="small" @click="openProjectModal('overtime')"
+          >总结加班日报</n-button
+        >
         <n-button type="info" size="small" @click="openProjectModal('weekly')">总结周报</n-button>
       </n-space>
     </section>
@@ -77,7 +82,7 @@ import {
 } from 'naive-ui'
 import { CopyOutline } from '@vicons/ionicons5'
 import { chatWithDeepSeek } from '../api/deepseek'
-const type = ref<'daily' | 'weekly'>('daily')
+const type = ref<'daily' | 'overtime' | 'weekly'>('daily')
 const loading = ref(false)
 const message = useMessage()
 const logRef = ref('')
@@ -96,8 +101,12 @@ const getSettings = () => {
 // 获取配置
 const settings = getSettings()
 const gitUser = settings.gitUser || ''
+// 获取本周的提交记录
 const weeklyCommand = `git log --since="monday" --author="${gitUser}" --pretty=format:"%an %ad %s" --date=format:"%Y-%m-%d %A"`
-const dailyCommand = `git log --since="00:00" --author="${gitUser}" --pretty=format:"%an %ad %s" --date=format:"%Y-%m-%d %A"`
+// 获取当天到18:30的提交记录
+const dailyCommand = `git log --since="00:00" --until="18:30" --author="${gitUser}" --pretty=format:"%an %ad %s" --date=format:"%Y-%m-%d %A"`
+// 获取当天18:30到21点的提交记录
+const overtimeCommand = `git log --since="18:30" --until="21:00" --author="${gitUser}" --pretty=format:"%an %ad %s" --date=format:"%Y-%m-%d %A"`
 // 项目选择相关，单选/多选
 interface Project {
   alias: string
@@ -110,14 +119,14 @@ const selectedProject = ref<string>('')
 const selectedProjects = ref<string[]>([])
 const modalTitle = ref('选择项目')
 // 打开项目选择弹窗
-const openProjectModal = (summarizeType: 'daily' | 'weekly') => {
+const openProjectModal = (summarizeType: 'daily' | 'overtime' | 'weekly') => {
   if (!gitUser) {
     message.warning('请先配置 Git 用户名')
     return
   }
   type.value = summarizeType
-  selectMode.value = summarizeType === 'daily' ? 'single' : 'multiple'
-  modalTitle.value = summarizeType === 'daily' ? '选择项目（单选）' : '选择项目（多选）'
+  selectMode.value = (summarizeType === 'daily' || summarizeType === 'overtime') ? 'single' : 'multiple'
+  modalTitle.value = (summarizeType === 'daily' || summarizeType === 'overtime') ? '选择项目（单选）' : '选择项目（多选）'
   // 读取项目列表
   const raw = localStorage.getItem('githelper-projects')
   projectList.value = raw ? JSON.parse(raw) : []
@@ -139,12 +148,19 @@ const onProjectSelectConfirm = async () => {
   await handleSummarize(type.value)
 }
 // 总结
-const handleSummarize = async (summarizeType: 'daily' | 'weekly') => {
+const handleSummarize = async (summarizeType: 'daily' | 'overtime' | 'weekly') => {
   try {
     loading.value = true
-    const command = summarizeType === 'daily' ? dailyCommand : weeklyCommand
+    // 根据类型选择对应的git命令
+    let command = weeklyCommand // 默认周报命令
     if (summarizeType === 'daily') {
-      // 单选
+      command = dailyCommand
+    } else if (summarizeType === 'overtime') {
+      command = overtimeCommand
+    }
+
+    if (summarizeType === 'daily' || summarizeType === 'overtime') {
+      // 单选模式（日报和加班日报）
       logRef.value = ''
       const projectPath = selectedProject.value
       if (!projectPath) return
@@ -157,12 +173,12 @@ const handleSummarize = async (summarizeType: 'daily' | 'weekly') => {
         .map((line) => (line ? prefix + line : ''))
         .join('\n')
     } else {
-      // 多选
+      // 多选模式（周报）
       logRef.value = ''
       let allLogs = ''
       for (const projectPath of selectedProjects.value) {
         const project = projectList.value.find((p) => p.path === projectPath)
-        let result = await window.api?.runGitLog({ command: weeklyCommand, projectPath })
+        let result = await window.api?.runGitLog({ command, projectPath })
         const prefix = project ? `[${project.alias}] ` : ''
         allLogs +=
           (result || '')
@@ -193,9 +209,11 @@ const handleSummarizeDeepSeek = async () => {
       return
     }
     const messages = [{ role: 'user', content: logRef.value }]
-    if (type.value === 'daily') {
+    if (type.value === 'daily' || type.value === 'overtime') {
+      // 日报和加班日报都使用日报模板
       messages.unshift({ role: 'system', content: settings.dailyTemplate })
     } else {
+      // 周报使用周报模板
       messages.unshift({ role: 'system', content: settings.weeklyTemplate })
     }
     // 先在日志最后一行添加分割线
