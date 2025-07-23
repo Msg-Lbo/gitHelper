@@ -9,39 +9,35 @@
         class="oa-webview"
         :preload="preloadScriptPath"
       ></webview>
-      <n-button
-        v-if="!oaToken"
-        class="refresh-button"
-        strong
-        secondary
-        circle
-        type="primary"
-        @click="reloadWebview"
-      >
-        <template #icon>
-          <n-icon><ReloadOutline /></n-icon>
-        </template>
-      </n-button>
     </template>
+    <n-button
+      v-if="!oaToken"
+      class="refresh-button"
+      strong
+      secondary
+      circle
+      type="primary"
+      @click="reloadWebview"
+    >
+      <template #icon>
+        <n-icon><ReloadOutline /></n-icon>
+      </template>
+    </n-button>
 
-    <!-- 如果成功获取Token，则显示成功信息和Token内容 -->
-    <div v-else class="token-display">
-      <n-card title="🎉 登录成功" hoverable>
-        <p>已成功获取到您的 OA Token，并已保存供其他功能使用。</p>
-        <n-blockquote>
-          <code style="background: #2a2a32; padding: 8px; border-radius: 4px; display: block; word-break: break-all; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; color: #4f9eff;">{{ oaToken }}</code>
-        </n-blockquote>
-        <template #footer>
-          <n-button type="error" ghost @click="logout">退出登录</n-button>
-        </template>
-      </n-card>
-    </div>
+    <n-tabs type="bar" animated>
+      <n-tab-pane name="myProject" tab="我的项目" display-directive="show">
+
+      </n-tab-pane>
+      <n-tab-pane name="myProject" tab="我的BUG" display-directive="show">
+        
+      </n-tab-pane>
+    </n-tabs>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, watch, nextTick } from 'vue'
-import { NButton, NIcon, NCard, NBlockquote, useMessage } from 'naive-ui'
+import { NButton, NIcon, NTabs, NTabPane, useMessage } from 'naive-ui'
 import { ReloadOutline } from '@vicons/ionicons5'
 import { getCompressedOAStyles } from '../styles/oa-injection'
 
