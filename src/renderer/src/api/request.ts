@@ -1,5 +1,70 @@
 import axios, { InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios'
-import { getOAToken, getApiBaseUrl } from '../utils/storage'
+
+// 本地存储相关常量和函数
+const SETTINGS_KEY = 'githelper-settings'
+
+/**
+ * 获取设置
+ */
+const getSettings = () => {
+  try {
+    const settings = localStorage.getItem(SETTINGS_KEY)
+    return settings ? JSON.parse(settings) : {}
+  } catch (error) {
+    console.error('获取设置失败:', error)
+    return {}
+  }
+}
+
+/**
+ * 获取 OA Token
+ */
+const getOAToken = (): string | null => {
+  const settings = getSettings()
+  return settings.oaToken || null
+}
+
+/**
+ * 设置 OA Token
+ */
+const setOAToken = (token: string): void => {
+  try {
+    const settings = getSettings()
+    settings.oaToken = token
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+  } catch (error) {
+    console.error('保存 OA Token 失败:', error)
+  }
+}
+
+/**
+ * 清除 OA Token
+ */
+const clearOAToken = (): void => {
+  try {
+    const settings = getSettings()
+    delete settings.oaToken
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+  } catch (error) {
+    console.error('清除 OA Token 失败:', error)
+  }
+}
+
+/**
+ * 检查 Token 是否存在
+ */
+const hasOAToken = (): boolean => {
+  const token = getOAToken()
+  return Boolean(token && token.trim())
+}
+
+/**
+ * 获取 API 基础 URL
+ */
+const getApiBaseUrl = (): string => {
+  const settings = getSettings()
+  return settings.apiBaseUrl || 'https://ai.mufengweilai.com/api'
+}
 
 const BASE_URL = getApiBaseUrl()
 
@@ -82,6 +147,6 @@ request.interceptors.response.use(
 )
 
 // 导出存储工具函数，方便其他模块使用
-export { setOAToken as setToken, clearOAToken as clearToken, hasOAToken as hasToken } from '../utils/storage'
+export { setOAToken as setToken, clearOAToken as clearToken, hasOAToken as hasToken }
 
 export default request
